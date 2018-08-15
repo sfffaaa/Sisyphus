@@ -5,6 +5,7 @@ name = "pypi"
 
 [packages]
 setproctitle = "*"
+git-pylint-commit-hook = "*"
 
 [dev-packages]
 

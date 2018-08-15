@@ -1,14 +1,18 @@
 PROJECT=pysisyphus
 SRC=$(wildcard *.py) $(wildcard sisyphus/*.py)
 PIP=$(PROJECT).tgz
+PEP8_HOOK=.git/hooks/pre-commit
 
-.PHONY: all
+.PHONY: all $(PEP8_HOOK)
 
-all: $(PIP)
+all: $(PIP) $(PEP8_HOOK)
 
 $(PIP): $(SRC)
 	tar zcvf $(PIP) $^
 
+$(PEP8_HOOK):
+	@[ -f .git/hooks/pre-commit ] || echo "git-pylint-commit-hook" >> .git/hooks/pre-commit
+	@chmod +x .git/hooks/pre-commit
 
 .PHONY: install uninstall clean
 

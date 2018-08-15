@@ -1,0 +1,31 @@
+[MASTER]
+
+[BASIC]
+bad-names           = foo,
+                      bar,
+                      test,
+                      abc
+
+[DESIGN]
+max-branchs         = 20
+
+[MESSAGES CONTROL]
+# Disable pylint
+#C0111: Missing module docstring
+disable             = missing-docstring,
+                      useless-object-inheritance,
+                      invalid-name,
+                      too-few-public-methods,
+                      c-extension-no-member,
+                      wrong-import-order
+
+[REPORTS]
+output-format       = colorized
+score               = yes
+
+[FORMAT]
+max-line-length     = 108
+max-module-lines    = 1024
+
+[TYPECHECK]
+generated-members   = critical,error,warning,info,debug
