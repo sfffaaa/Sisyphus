@@ -3,8 +3,14 @@
 
 import time
 import logging
-import setproctitle # pylint: disable=import-error
 from multiprocessing import Process
+try:
+    from setproctitle import setproctitle as procname # pylint: disable=import-error
+except ImportError:
+    try:
+        from procname import setprocname as procname
+    except ImportError:
+        procname = lambda x: None
 
 
 class Sisyphus(object):
@@ -44,7 +50,7 @@ class Sisyphus(object):
             self.critical(f'Ctrl-C')
 
     def worker(self, name):
-        setproctitle.setproctitle(f'{name} ({self._jobs_[name]["frequency"]})')
+        procname(f'{name} ({self._jobs_[name]["frequency"]})')
         while True:
             self._jobs_[name]['fn'].__globals__['worker'] = self
             self._jobs_[name]['fn']()

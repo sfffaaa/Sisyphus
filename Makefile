@@ -26,3 +26,7 @@ clean:
 	rm -f $(PIP)
 	find . -name '*.swp' -delete
 
+.PHONY: test
+
+test:
+	[ "${PIPENV_ACTIVE}" != "1" ] || pytest tests
