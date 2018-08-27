@@ -4,7 +4,7 @@
 
 import pytest
 import tempfile
-from sisyphus import cli
+from sisyphus.__main__ import cli
 
 @pytest.fixture
 def client(mocker):

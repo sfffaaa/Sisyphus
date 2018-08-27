@@ -12,6 +12,6 @@ setup(
     packages=find_packages(),
     install_requires=['setproctitle', 'zmq', 'procname'],
     entry_points={
-        'console_scripts': 'sisyphus = sisyphus:cli.run',
+        'console_scripts': 'sisyphus = sisyphus.__main__:cli.run',
     },
 )
