@@ -10,7 +10,7 @@ setup(
     author='cmj',
     author_email='cmj.tw',
     packages=find_packages(),
-    install_requires=['setproctitle'],
+    install_requires=['setproctitle', 'zmq', 'procname'],
     entry_points={
         'console_scripts': 'sisyphus = sisyphus:cli.run',
     },
