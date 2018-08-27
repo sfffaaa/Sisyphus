@@ -3,12 +3,27 @@
 
 import time
 import logging
-import setproctitle # pylint: disable=import-error
-from multiprocessing import Process
+from multiprocessing import Process, Value
+import os
+
+try:
+    from setproctitle import setproctitle as procname # pylint: disable=import-error
+except ImportError:
+    try:
+        from procname import setprocname as procname
+    except ImportError:
+        procname = lambda x: None
 
 
 class Sisyphus(object):
     _jobs_ = {}
+
+    # NOTE - default configuration
+    config = {
+        'SISYPHUS_RPC': f'ipc://{os.path.expanduser("~")}/.sisyphus.sock',
+        'ITERATOR_SECONDES': 5,
+    }
+
 
     def __init__(self, debug=False):
         fmt = '[%(asctime)-.19s] (%(filename)s#%(lineno)04d) - %(message)s'
@@ -27,28 +42,41 @@ class Sisyphus(object):
         for attr in 'critical error warning info debug'.split():
             setattr(self, attr, getattr(logger, attr))
 
-    def __call__(self, frequency=5):
-        jobs = {}
+    def __call__(self, frequency=None):
         try:
-            while True:
-                for name in self._jobs_:
-                    if name not in jobs or not jobs[name].is_alive():
-                        jobs[name] = Process(target=self.worker, args=(name, ))
-                        jobs[name].start()
-                        self.warning(f'new job `{name}` on PID#{jobs[name].pid}')
-                time.sleep(frequency)
+            while self._jobs_:
+                for name, name_conf in self._jobs_.items():
+                    if 'proc' not in name_conf or not name_conf['proc'].is_alive():
+                        if not name_conf['counter'].value:
+                            self.warning(f'Terminate job {name} since counter=0')
+                            del self._jobs_[name]
+                            break
+                        elif 'proc' in name_conf:
+                            del self._jobs_[name]['proc']
+
+                        self._jobs_[name]['proc'] = Process(target=self.worker, args=(name, ))
+                        self._jobs_[name]['proc'].start()
+                        self.warning(f'new job `{name}` on PID#{self._jobs_[name]["proc"].pid}')
+                time.sleep(frequency or self.config['ITERATOR_SECONDES'])
         except KeyboardInterrupt:
-            for name in self._jobs_:
-                if name in jobs and jobs[name].is_alive():
-                    _ = jobs[name].kill() if hasattr(jobs[name], 'kill') else jobs[name].terminate()
+            for _, conf in self._jobs_.items():
+                _ = conf['proc'].kill() if hasattr(conf['proc'], 'kill') else conf['proc'].terminate()
             self.critical(f'Ctrl-C')
 
     def worker(self, name):
-        setproctitle.setproctitle(f'{name} ({self._jobs_[name]["frequency"]})')
-        while True:
+        procname(f'{name} ({self._jobs_[name]["frequency"]})')
+        while self._jobs_[name]['counter'].value:
+            if self._jobs_[name]['counter'].value > 0:
+                # count-down the counter
+                self._jobs_[name]['counter'].value -= 1
+
             self._jobs_[name]['fn'].__globals__['worker'] = self
             self._jobs_[name]['fn']()
             time.sleep(self._jobs_[name]['frequency'])
+
+    def load_config(self, filepath=None):
+        self.info(f'Loading configuration {filepath} ...')
+        raise NotImplementedError
 
     @property
     def jobs(self):
@@ -56,21 +84,19 @@ class Sisyphus(object):
         return '\n'.join(jobs)
 
     @classmethod
-    def register(cls, frequency=1):
+    def register(cls, frequency=1, counter=0):
         def wrapper(func):
             if func.__name__ in cls._jobs_:
                 raise KeyError(func.__name__)
 
-            cls._jobs_[func.__name__] = {'fn': func, 'frequency': frequency}
+            cls._jobs_[func.__name__] = {
+                'fn': func,
+                'frequency': frequency,
+                'counter': Value('i', counter), # Global variable for the multi-processes
+            }
 
             return func
         return wrapper
 
-
 if __name__ == '__main__':
-    @Sisyphus.register(1)
-    def echo():
-        print('echo ...')
-
-    sisyphus = Sisyphus()
-    sisyphus()
+    pass

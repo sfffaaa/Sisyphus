@@ -29,3 +29,6 @@ max-module-lines    = 1024
 
 [TYPECHECK]
 generated-members   = critical,error,warning,info,debug
+
+[MISCELLANEOUS]
+notes               = XXX,TODO,NOTE
