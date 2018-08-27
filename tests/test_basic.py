@@ -3,19 +3,22 @@
 # Copyright (C) 2017-2018 cmj<cmj@cmj.tw>. All right reserved.
 
 import pytest
+import tempfile
 from sisyphus import cli
 
-class TestCommandLine(object):
+@pytest.fixture
+def client(mocker):
+    with mocker.patch.object(cli, 'server'):
+        yield cli
 
-    @pytest.fixture
-    def client(self, mocker): # pylint: disable=no-self-use
-        with mocker.patch.object(cli, 'server'):
-            with mocker.patch.object(cli, 'client'):
-                yield cli
+def test_args(client):
+    client.run('-s')
+    client.server.assert_called_once()
 
-    def test_args(self, client): # pylint: disable=no-self-use
-        client.run('-s')
-        client.server.assert_called_once()
+def test_single_task(mocker, client):
+    with tempfile.NamedTemporaryFile('w', suffix='.py') as fd:
+        fd.write('def foo():\n\tprint("Run ...")\n')
+        fd.seek(0)
 
-        client.run('test')
-        client.client.assert_called_with('test')
+        client.run(f'run --count 1 -F foo {fd.name}')
+        client.run(f'run --count 2 -F foo {fd.name}')
