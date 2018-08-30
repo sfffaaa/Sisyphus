@@ -6,6 +6,10 @@ name = "pypi"
 [packages]
 setproctitle = "*"
 git-pylint-commit-hook = "*"
+zmq = "*"
+pytest = "*"
+pytest-mock = "*"
+procname = "*"
 
 [dev-packages]
 
